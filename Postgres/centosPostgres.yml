@@ -16,11 +16,6 @@
           - postgresql14-server
         state: present
 
-    - name: Check conf-file PostgreSQL
-      ansible.builtin.stat:
-        path: "/var/lib/pgsql/data/pg_hba.conf"
-      register: postgres_data
-
     - name: Register Contents of PGDATA Folder
       shell: ls /var/lib/pgsql/data
       register: pg_contents

@@ -1,0 +1,61 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Add repository
+      ansible.builtin.shell: yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+    - name: Upgrade all packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+
+    - name: Install Postgres server
+      ansible.builtin.yum:
+        name:
+          - postgresql13-server
+        state: present
+
+    - name: Check conf-file PostgreSQL
+      ansible.builtin.stat:
+        path: "/var/lib/pgsql/data/pg_hba.conf"
+      register: postgres_data
+
+    - name: Empty dir
+      ansible.builtin.file:
+        path: "/var/lib/pgsql/data"
+        state: absent
+      when: not postgres_data.stat.exists
+
+    - name: Copy file pg_hba.conf
+      ansible.builtin.copy:
+        src: pg_hba.conf
+        dest: /var/lib/pgsql/data/pg_hba.conf
+        owner: postgres
+        group: postgres
+        mode: '0644'
+
+    - name: Copy file postgresql.conf
+      ansible.builtin.copy:
+        src: postgresql.conf
+        dest: /var/lib/pgsql/data/postgresql.conf
+        owner: postgres
+        group: postgres
+        mode: '0644'
+
+    - name: Initialize DB server
+      ansible.builtin.shell: /usr/pgsql-14/bin/postgresql-13-setup initdb
+      become: true
+      become_user: postgres
+
+    - name: Enable service Database Postgres
+      ansible.builtin.systemd:
+        name: postgresql-13
+        state: started
+        enabled: yes
+
+    - name: Start service Database Postgres
+      ansible.builtin.systemd:
+        state: started
+        daemon_reload: yes
+        name: postgresql-13

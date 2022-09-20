@@ -1,0 +1,51 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Install depends package
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+          - curl
+          - gpg
+          - gnupg2
+          - lsb-release
+          - ca-certificates
+        state: latest
+        update_cache: true
+
+    - name: Add GPG-key
+      ansible.builtin.apt_key:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        state: present
+
+    - name: Add repository
+      apt_repository:
+        repo: "deb https://download.docker.com/linux/ubuntu bullseye stable"
+        state: present
+
+    - name: Add user docker
+      user:
+        name: dockeruser
+        groups: docker
+        append: yes
+      become: yes
+
+    - name: Install Docker-CE
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: latest
+        update_cache: true
+
+    - name: Execute shell
+          ansible.builtin.shell: docker run -p 5601:5601 -p 9200:9200 -p 5044:5044 -it --name elk sebp/elk

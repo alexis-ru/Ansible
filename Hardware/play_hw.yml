@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Transfer the script
+      ansible.builtin.copy:
+        src: /home/user/ansible/hardware.sh
+        dest: /home/user
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Execute the script
+      ansible.builtin.script: hardware.sh >> $(hostname)_$(date "+%d%m%Y__%H%M%S")
+
+    - name: Execute the script
+      ansible.builtin.shell: scp $(hostname)_$(date "+%d%m%Y__%H%M%S") root@192.168.1.11:/home/user

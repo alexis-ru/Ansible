@@ -1,0 +1,50 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Install Postgres server
+      ansible.builtin.apt:
+        name:
+          - wget
+          - gpg
+          - gnupg2
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - postgresql
+        state: present
+
+    - name: Add repository
+      ansible.builtin.shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+    - name: Add repository
+      ansible.builtin.shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+    - name: Update all packages
+      ansible.builtin.apt:
+        name: '*'
+        state: latest
+
+    - name: Copy file pg_hba.conf
+      ansible.builtin.copy:
+        src: pg_hba.conf
+        dest: /var/lib/pgsql/data/pg_hba.conf
+        owner: postgres
+        group: postgres
+        mode: '0644'
+
+    - name: Copy file postgresql.conf
+      ansible.builtin.copy:
+        src: postgresql.conf
+        dest: /var/lib/pgsql/data/postgresql.conf
+        owner: postgres
+        group: postgres
+        mode: '0644'
+
+    - name: Start service Database Postgres
+      ansible.builtin.systemd:
+        state: started
+        daemon_reload: yes
+        name: postgresql

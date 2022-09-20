@@ -10,22 +10,25 @@
           - wget
           - gpg
           - gnupg2
-          - software-properties-common
-          - apt-transport-https
-          - ca-certificates
-          - postgresql
+          - sudo
         state: present
 
     - name: Add repository
-      ansible.builtin.shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+      ansible.builtin.shell: if [["sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'" ==""]]; then sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'; fi
 
     - name: Add repository
-      ansible.builtin.shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+      ansible.builtin.shell: if [["wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -" ==""]]; then wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; fi
 
     - name: Update all packages
       ansible.builtin.apt:
         name: '*'
         state: latest
+
+    - name: Install Postgres
+      ansible.builtin.apt:
+        name:
+          - postgresql-14
+        state: present
 
     - name: Copy file pg_hba.conf
       ansible.builtin.copy:
@@ -43,8 +46,8 @@
         group: postgres
         mode: '0644'
 
-    - name: Start service Database Postgres
+    - name: Enable service Database Postgres
       ansible.builtin.systemd:
-        state: started
-        daemon_reload: yes
         name: postgresql
+        state: started
+        enabled: yes
